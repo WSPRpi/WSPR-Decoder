@@ -420,7 +420,7 @@ int main(int argc, char *argv[])
 
   FILE *fall_wspr, *fwsprd, *fhash, *ftimer;
   FILE *fdiag;
-  fall_wspr=stdout;
+  fall_wspr=fopen("/dev/null", "w");
   fwsprd=fopen("/dev/null","w");
   fdiag=fopen("/dev/null","a");
 
