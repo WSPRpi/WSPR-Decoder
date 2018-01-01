@@ -860,20 +860,24 @@ could each work on one candidate at a time.
 // Add an extra space at the end of each line so that wspr-x doesn't 
 // truncate the power (TNX to DL8FCL!)
 
+	/*
 	printf("%4s %3.0f %4.1f %10.6f %2d  %-s \n",
 	       uttime, snr0[j],(shift1*dt-2.0), dialfreq+(1500+f1)/1e6,
 	       (int)drift1, call_loc_pow);
-
-	fprintf(fall_wspr,
+	*/
+	
+	printf(fall_wspr,
 		"%6s %4s %3.0f %3.0f %4.1f %10.7f  %-22s %2d %5u %4d\n",
 		date,uttime,sync1*10,snr0[j],
 		shift1*dt-2.0, dialfreq+(1500+f1)/1e6,
 		call_loc_pow, (int)drift1, cycles/81, ii);
 
+	/*
 	fprintf(fwsprd,"%6s %4s %3d %3.0f %4.1f %10.6f  %-22s %2d %5u %4d\n",
 		date,uttime,(int)(sync1*10),snr0[j],
 		shift1*dt-2.0, dialfreq+(1500+f1)/1e6,
 		call_loc_pow, (int)drift1, cycles/81, ii);
+	*/
 
 /* For timing tests
 
