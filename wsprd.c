@@ -432,6 +432,15 @@ int main(int argc, char *argv[])
   }
   ftimer=fopen("/dev/null","w");
 
+// Parse date and time from given filename
+  time_t calendar = time(NULL);
+  struct tm utc;
+  gmtime_r(&calendar, &utc);
+  strftime(date, 7, "%y%m%d", &utc);
+  strftime(uttime, 5, "%H%M", &utc);
+  date[6]='\0';
+  uttime[4]='\0';
+
   if( strstr(ptr_to_infile,".wav") || strcmp(ptr_to_infile, "/dev/stdin") == 0) {
     ptr_to_infile_suffix=strstr("test.wav",".wav");
 
@@ -455,12 +464,6 @@ int main(int argc, char *argv[])
     printf("WSPR file must have suffix .wav or .c2\n");
     return 1;
   }
-
-// Parse date and time from given filename
-  strncpy(date,ptr_to_infile_suffix-11,6);
-  strncpy(uttime,ptr_to_infile_suffix-4,4);
-  date[6]='\0';
-  uttime[4]='\0';
 
 // Do windowed ffts over 2 symbols, stepped by half symbols
   int nffts=4*floor(npoints/512)-1;
