@@ -2,6 +2,8 @@
  This file is part of program wsprd, a detector/demodulator/decoder
  for the Weak Signal Propagation Reporter (WSPR) mode.  Presently
  implemented for WSPR-2; needs some changes for WSPR-15.
+
+//HELLO :)
  
  File name: wsprd.c
 
