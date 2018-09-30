@@ -3,25 +3,23 @@
  for the Weak Signal Propagation Reporter (WSPR) mode.  Presently
  implemented for WSPR-2; needs some changes for WSPR-15.
 
-//HELLO :)
- 
  File name: wsprd.c
 
  Copyright 2001-2015, Joe Taylor, K1JT
  Copyright 2014-2015, Steven Franke, K9AN
-
+ Messed with by LIDS (M0WUT/M0IKY) 2018
  License: GNU GPL v3
- 
+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -34,7 +32,6 @@
 #include <stdint.h>
 #include <time.h>
 #include <fftw3.h>
-
 #include "fano.h"
 #include "wsprd_utils.h"
 
@@ -57,7 +54,7 @@ unsigned char pr3[162]=
 
 unsigned long nr;
 
-//***************************************************************************
+//***************************************************************************//
 unsigned long readc2file(char *ptr_to_infile, double *idat, double *qdat, 
 			 double *freq)
 {
@@ -76,7 +73,7 @@ unsigned long readc2file(char *ptr_to_infile, double *idat, double *qdat,
   unsigned long nread=fread(c2file,sizeof(char),14,fp);
   nread=fread(&ntrmin,sizeof(int),1,fp);
   nread=fread(&dfreq,sizeof(double),1,fp);
-  *freq=dfreq;
+/*  *freq=dfreq; */
   nread=fread(buffer,sizeof(float),2*45000,fp);
 
   for(i=0; i<45000; i++) {
@@ -91,9 +88,63 @@ unsigned long readc2file(char *ptr_to_infile, double *idat, double *qdat,
   }
 }
 
-//***************************************************************************
+//***************************************************************************//
 unsigned long readwavfile(char *ptr_to_infile, double *idat, double *qdat )
 {
+  /* Version modified by M0WUT that expects I data in channel 1 and Q in channel
+     2. Expected sample rate: 48kHz*/
+
+  FILE* fp;
+  uint16_t *buffer;
+  long nInputSamples = 48000 * 120 * 2; /* Input is 2 minutes * 2 channels * at 48kSPS */
+  int nOutputSamples = 45000; /* Result is 2 minutes at 375SPS */
+
+  fp=fopen(ptr_to_infile,"r");
+  fp = fopen(ptr_to_infile,"rb");
+  if (fp == NULL)
+  {
+    fprintf(stderr, "Cannot open data file '%s'\n", ptr_to_infile);
+    return 1;
+  }
+
+  buffer = malloc(nInputSamples * sizeof(uint16_t));
+
+  fread(buffer, sizeof(uint16_t), 22, fp); /* Get rid of header */
+  fread(buffer, sizeof(uint16_t), nInputSamples, fp); /* Read all data into buffer */
+
+ /* Decimate by factor of 128. We are sampling at 48kHz as it's an integer multiple of required 375SPS.
+    Averaging also should give us reasonable accuracy as expects 32 bit floating point
+    samples and we're only measuring at 16 bits raw log2(128) is 7 so should (in theory, I think)
+    get 7 bits extra precision making us sample at 23 bits resolution (16 raw + 7 from oversampling).
+    32 bit floating point is 24 bits of precision (according to Wikipedia) so should be good enough?
+    *crosses fingers* - WUT */
+
+  uint32_t iSample, qSample, sampleNumber;
+  uint32_t i, j;
+  for (iSample = 0, qSample = 0, i = 0; i < nOutputSamples; i++, iSample = 0, qSample = 0)
+  {
+    for (j = 0; j < 128; j++)
+    {
+      sampleNumber = 256 * i + j; /* 256 as 2 channels */
+      iSample += buffer[sampleNumber * 2];
+      qSample += buffer[sampleNumber * 2 + 1];
+    }
+
+    /* Not entirely sure about this next bit. Definetly need to divide by 128 to average,
+       looks like k9an divides by 1000 to go from wav samples to I/Q but the stupid .c2 file
+       (which is closer to what I'm replicating appears to be an figment of K1JT's imagination
+       so can't find any useful information on file structure online as NOBODY else seems to use it
+       :( - WUT */
+
+    idat[i] = (float) iSample / 128000.0;
+    qdat[i] = (float) qSample / 128000.0;
+  }
+
+  return 45000; /* I have no idea why he does this  - WUT */
+
+}
+
+/*
   unsigned long i, j;
   int nfft1=1474560;;
   int nfft2=nfft1/32;                  //nfft2=46080
@@ -156,7 +207,8 @@ unsigned long readwavfile(char *ptr_to_infile, double *idat, double *qdat )
   fftw_free(fftin);
   fftw_free(fftout);
   return nfft2;
-}
+*/
+
 
 //***************************************************************************
 void sync_and_demodulate(double *id, double *qd, long np, 
@@ -303,7 +355,7 @@ void sync_and_demodulate(double *id, double *qd, long np,
   return;
 }
 
-//***************************************************************************
+//***************************************************************************//
 void usage(void)
 {
   printf("Usage: wsprd [options...] infile\n");
@@ -323,7 +375,7 @@ void usage(void)
   printf("       -w wideband mode - decode signals within +/- 150 Hz of center\n");
 }
 
-//***************************************************************************
+//***************************************************************************//
 int main(int argc, char *argv[])
 {
   extern char *optarg;
